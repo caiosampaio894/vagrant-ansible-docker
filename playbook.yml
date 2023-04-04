@@ -3,9 +3,8 @@
   become: yes
   vars:
     container_count: 4
-    default_container_name: docker
-    default_container_image: "../Dockerfile"
-    default_container_command: sleep 1d
+    default_container_name: api-cep-1
+    default_container_image: "api-cep:v1"
 
   tasks:
     - name: Install aptitude
@@ -47,15 +46,25 @@
       pip:
         name: docker
 
-    - name: Pull default Docker image
-      community.docker.docker_image:
-        name: "{{ default_container_image }}"
-        source: pull
+    - name: Copy to /tmp
+      copy:
+        src: /home/caio/curso_docker/vagrant-ansible-docker/
+        dest: /tmp/
+ 
+
+    - name: build container image
+      docker_image:
+       name: api-cep
+       source: build 
+       build:         
+           path: /tmp/
+       tag: v1
+     
 
     - name: Create default containers
       community.docker.docker_container:
-        name: "{{ default_container_name }}{{ item }}"
+        name: "{{ default_container_name }}"
         image: "{{ default_container_image }}"
-        command: "{{ default_container_command }}"
         state: present
-      with_sequence: count={{ container_count }}
+        ports:
+             - "8080:80"
